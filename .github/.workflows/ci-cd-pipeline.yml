@@ -1,0 +1,42 @@
+name: Azure FinOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy-infrastructure-and-code:
+    runs-on: ubuntu-latest
+    steps:
+    # 1. Checkout repository code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Log in to Azure using Service Principal Secret
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        crets: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # 3. Setup Terraform
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    # 4. Terraform Apply (Automated Infrastructure Provisioning)
+    - name: Terraform Init & Apply
+      run: |
+        terraform init
+        terraform apply -auto-approve
+
+    # 5. Setup Python for Function App deployment
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 6. Deploy Python Function Code to Azure
+    - name: Deploy Azure Function
+      uses: Azure/functions-action@v1
+      with:
+        app-name: 'function_app.py' 
+        package: '.'
